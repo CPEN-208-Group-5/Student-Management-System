@@ -1,127 +1,153 @@
--- Drop tables if they exist (in reverse order to respect FK constraints)
-DROP TABLE IF EXISTS lecturer_courses, student_courses, payments, courses, lecturers, students, departments CASCADE;
+-- Schema
+CREATE SCHEMA department;
 
--- Create Departments
-CREATE TABLE departments (
-    department_id SERIAL PRIMARY KEY,
-    department_name VARCHAR(100),
-    head_of_department INT
-);
-
--- Create Students
-CREATE TABLE students (
+-- Tables
+-- 1. Students
+CREATE TABLE department.students (
     student_id SERIAL PRIMARY KEY,
-    first_name VARCHAR(50),
-    last_name VARCHAR(50),
-    gender VARCHAR(10),
-    date_of_birth DATE,
-    email VARCHAR(100) UNIQUE,
-    phone_number VARCHAR(20),
-    address TEXT,
-    registration_date DATE DEFAULT CURRENT_DATE
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
+    email VARCHAR(100) UNIQUE NOT NULL,
+    phone VARCHAR(20),
+    level INT,
+    program VARCHAR(100)
 );
 
--- Create Lecturers
-CREATE TABLE lecturers (
+-- 2. Lecturers
+CREATE TABLE department.lecturers (
     lecturer_id SERIAL PRIMARY KEY,
-    first_name VARCHAR(50),
-    last_name VARCHAR(50),
-    email VARCHAR(100) UNIQUE,
-    phone_number VARCHAR(20),
-    department VARCHAR(50),
-    department_id INT REFERENCES departments(department_id),
-    hire_date DATE
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
+    email VARCHAR(100) UNIQUE NOT NULL,
+    office VARCHAR(50)
 );
 
--- Add FK constraint to departments (head_of_department now that lecturers exist)
-ALTER TABLE departments ADD CONSTRAINT fk_hod FOREIGN KEY (head_of_department) REFERENCES lecturers(lecturer_id);
+-- 3. Teaching Assistants (TAs)
+CREATE TABLE department.tas (
+    ta_id SERIAL PRIMARY KEY,
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
+    email VARCHAR(100) UNIQUE NOT NULL,
+    level INT
+);
 
--- Create Courses
-CREATE TABLE courses (
+-- 4. Courses
+CREATE TABLE department.courses (
     course_id SERIAL PRIMARY KEY,
-    course_code VARCHAR(10) UNIQUE,
-    course_name VARCHAR(100),
-    credit_hours INT CHECK (credit_hours > 0),
-    department VARCHAR(50),
-    department_id INT REFERENCES departments(department_id)
+    course_code VARCHAR(10) UNIQUE NOT NULL,
+    course_name VARCHAR(100) NOT NULL,
+    credit_hours INT NOT NULL
 );
 
--- Create Student_Courses (Junction)
-CREATE TABLE student_courses (
-    student_id INT REFERENCES students(student_id),
-    course_id INT REFERENCES courses(course_id),
-    enrollment_date DATE DEFAULT CURRENT_DATE,
-    grade CHAR(2),
-    PRIMARY KEY (student_id, course_id)
+-- 5. Course Enrollment
+CREATE TABLE department.course_enrollments (
+    enrollment_id SERIAL PRIMARY KEY,
+    student_id INT REFERENCES department.students(student_id) ON DELETE CASCADE,
+    course_id INT REFERENCES department.courses(course_id) ON DELETE CASCADE,
+    semester VARCHAR(20),
+    academic_year VARCHAR(20)
 );
 
--- Create Lecturer_Courses (Junction)
-CREATE TABLE lecturer_courses (
-    lecturer_id INT REFERENCES lecturers(lecturer_id),
-    course_id INT REFERENCES courses(course_id),
-    assigned_date DATE DEFAULT CURRENT_DATE,
-    PRIMARY KEY (lecturer_id, course_id)
-);
-
--- Create Payments
-CREATE TABLE payments (
+-- 6. Fee Payments
+CREATE TABLE department.fee_payments (
     payment_id SERIAL PRIMARY KEY,
-    student_id INT REFERENCES students(student_id),
-    payment_date DATE DEFAULT CURRENT_DATE,
-    amount NUMERIC(10, 2),
-    payment_method VARCHAR(50),
-    payment_status VARCHAR(20) CHECK (payment_status IN ('Pending', 'Completed', 'Failed'))
+    student_id INT REFERENCES department.students(student_id) ON DELETE CASCADE,
+    amount_paid DECIMAL(10, 2),
+    payment_date DATE
 );
 
--- Indexes for quick lookup
-CREATE INDEX idx_students_email ON students(email);
-CREATE INDEX idx_courses_code ON courses(course_code);
-CREATE INDEX idx_lecturers_email ON lecturers(email);
-CREATE INDEX idx_payments_student ON payments(student_id);
-CREATE INDEX idx_student_courses_student ON student_courses(student_id);
-CREATE INDEX idx_lecturer_courses_lecturer ON lecturer_courses(lecturer_id);
+-- 7. Fee Structure (based on level)
+CREATE TABLE department.fee_structure (
+    level INT PRIMARY KEY,
+    amount_due DECIMAL(10, 2)
+);
 
--- Departments
-INSERT INTO departments (department_name) VALUES
-('Computer Science'),
-('Mathematics'),
-('Engineering');
+-- 8. Lecturer to Course Assignment
+CREATE TABLE department.lecturer_courses (
+    id SERIAL PRIMARY KEY,
+    lecturer_id INT REFERENCES department.lecturers(lecturer_id) ON DELETE CASCADE,
+    course_id INT REFERENCES department.courses(course_id) ON DELETE CASCADE
+);
 
+-- 9. Lecturer to TA Assignment
+CREATE TABLE department.lecturer_tas (
+    id SERIAL PRIMARY KEY,
+    lecturer_id INT REFERENCES department.lecturers(lecturer_id) ON DELETE CASCADE,
+    ta_id INT REFERENCES department.tas(ta_id) ON DELETE CASCADE
+);
+
+-- Sample Data
 -- Students
-INSERT INTO students (first_name, last_name, gender, date_of_birth, email, phone_number, address)
-VALUES
-('John', 'Doe', 'Male', '2002-04-10', 'john.doe@example.com', '1234567890', 'Accra, Ghana'),
-('Jane', 'Smith', 'Female', '2003-07-21', 'jane.smith@example.com', '0987654321', 'Kumasi, Ghana');
+INSERT INTO department.students (first_name, last_name, email, phone, level, program) VALUES
+('Daniel', 'Fugar', 'dfugar@ug.edu.gh', '0550000001', 400, 'Computer Engineering'),
+('Akosua', 'Mensah', 'amensah@ug.edu.gh', '0550000002', 400, 'Computer Engineering');
 
 -- Lecturers
-INSERT INTO lecturers (first_name, last_name, email, phone_number, department, department_id, hire_date)
-VALUES
-('Dr. Kwame', 'Mensah', 'kwame.mensah@university.edu', '111222333', 'Computer Science', 1, '2020-08-01'),
-('Dr. Akua', 'Boateng', 'akua.boateng@university.edu', '444555666', 'Mathematics', 2, '2018-01-15');
+INSERT INTO department.lecturers (first_name, last_name, email, office) VALUES
+('John', 'Doe', 'jdoe@ug.edu.gh', 'CSB12'),
+('Jane', 'Smith', 'jsmith@ug.edu.gh', 'CSB15');
 
--- Update head_of_department
-UPDATE departments SET head_of_department = 1 WHERE department_id = 1;
+-- TAs
+INSERT INTO department.tas (first_name, last_name, email, level) VALUES
+('Kojo', 'Owusu', 'kowusu@ug.edu.gh', 600),
+('Ama', 'Baah', 'abaah@ug.edu.gh', 600);
 
 -- Courses
-INSERT INTO courses (course_code, course_name, credit_hours, department, department_id)
-VALUES
-('CS101', 'Intro to CS', 3, 'Computer Science', 1),
-('MATH201', 'Calculus II', 4, 'Mathematics', 2);
+INSERT INTO department.courses (course_code, course_name, credit_hours) VALUES
+('CPEN401', 'Embedded Systems', 3),
+('CPEN402', 'Computer Networks', 3);
 
--- Student Course Enrollments
-INSERT INTO student_courses (student_id, course_id, grade)
-VALUES
-(1, 1, 'A'),
-(2, 2, 'B');
+-- Enrollments
+INSERT INTO department.course_enrollments (student_id, course_id, semester, academic_year) VALUES
+(1, 1, 'First', '2024/2025'),
+(2, 2, 'First', '2024/2025');
 
--- Lecturer Course Assignments
-INSERT INTO lecturer_courses (lecturer_id, course_id)
-VALUES
+-- Fee Structure
+INSERT INTO department.fee_structure (level, amount_due) VALUES
+(400, 2500.00);
+
+-- Payments
+INSERT INTO department.fee_payments (student_id, amount_paid, payment_date) VALUES
+(1, 2000.00, '2025-01-10'),
+(1, 300.00, '2025-03-15'),
+(2, 2500.00, '2025-01-12');
+
+-- Lecturer-Course Assignments
+INSERT INTO department.lecturer_courses (lecturer_id, course_id) VALUES
 (1, 1),
 (2, 2);
 
--- Payments
-INSERT INTO payments (student_id, amount, payment_method, payment_status)
-VALUES
-(1, 1500.00, 'Mobile Money', 'Completed'),
-(2, 1450.00, 'Credit Card', 'Pending');
+-- Lecturer-TA Assignments
+INSERT INTO department.lecturer_tas (lecturer_id, ta_id) VALUES
+(1, 1),
+(2, 2);
+
+-- Function to calculate outstanding fees
+CREATE OR REPLACE FUNCTION department.get_outstanding_fees()
+RETURNS JSON AS $$
+DECLARE
+    result JSON;
+BEGIN
+    SELECT json_agg(t)
+    INTO result
+    FROM (
+        SELECT 
+            s.student_id,
+            s.first_name,
+            s.last_name,
+            fs.amount_due,
+            COALESCE(SUM(fp.amount_paid), 0) AS total_paid,
+            fs.amount_due - COALESCE(SUM(fp.amount_paid), 0) AS outstanding_balance
+        FROM department.students s
+        JOIN department.fee_structure fs ON s.level = fs.level
+        LEFT JOIN department.fee_payments fp ON s.student_id = fp.student_id
+        GROUP BY s.student_id, s.first_name, s.last_name, fs.amount_due
+        HAVING fs.amount_due - COALESCE(SUM(fp.amount_paid), 0) > 0
+    ) t;
+
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql; 
+
+-- Example usage:
+SELECT department.get_outstanding_fees();

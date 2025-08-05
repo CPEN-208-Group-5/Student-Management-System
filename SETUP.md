@@ -17,7 +17,7 @@
 
 2. **Access the applications:**
    - Frontend: http://localhost:3000
-   - Backend API: http://localhost:8080/api
+   - Backend API: http://localhost:8081/api
    - Database: localhost:5432
 
 ### Option 2: Manual Setup
@@ -52,16 +52,16 @@ powershell -ExecutionPolicy Bypass -File test-backend-local.ps1
 ### Manual API Testing
 ```bash
 # Test Students API
-curl http://localhost:8080/api/students
+curl http://localhost:8081/api/students
 
 # Test Courses API
-curl http://localhost:8080/api/courses
+curl http://localhost:8081/api/courses
 
 # Test Lecturers API
-curl http://localhost:8080/api/lecturers
+curl http://localhost:8081/api/lecturers
 
 # Test Fee Structures API
-curl http://localhost:8080/api/fee-structures
+curl http://localhost:8081/api/fee-structures
 ```
 
 ## 📊 Available APIs
@@ -134,9 +134,10 @@ The system uses PostgreSQL with the following main tables:
 - Username: `admin`
 - Password: `admin123`
 - Schema: `department`
+- Port: 8081
 
 ### Frontend Configuration
-- API URL: `http://localhost:8080/api`
+- API URL: `http://localhost:8081/api`
 - Port: 3000
 
 ## 🐛 Troubleshooting
@@ -154,13 +155,13 @@ The system uses PostgreSQL with the following main tables:
    - Verify CORS configuration
 
 3. **Frontend Can't Connect to Backend**
-   - Ensure backend is running on port 8080
+   - Ensure backend is running on port 8081
    - Check API URL configuration
    - Verify CORS is enabled
 
 4. **Docker Issues**
    - Ensure Docker Desktop is running
-   - Check if ports 3000, 8080, 5432 are available
+   - Check if ports 3000, 8081, 5432 are available
    - Restart Docker containers: `docker-compose down && docker-compose up -d`
 
 ## 📝 Development Notes

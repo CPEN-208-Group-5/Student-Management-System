@@ -2,7 +2,7 @@
 Write-Host "Testing Backend APIs Locally..." -ForegroundColor Green
 
 # Test if application is running
-$baseUrl = "http://localhost:8080"
+$baseUrl = "http://localhost:8081"
 
 # Test health endpoint first
 Write-Host "`nTesting application health..." -ForegroundColor Yellow

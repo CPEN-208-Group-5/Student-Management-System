@@ -11,7 +11,7 @@ Getting Started
 2. Start the PostgreSQL container:
     docker-compose up -d
 
-3. Access it on port 5432 using:
+3. Access it on port 5433 using:
     DB Name: student_management
     User: admin
     Password: admin123

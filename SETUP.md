@@ -18,7 +18,7 @@
 2. **Access the applications:**
    - Frontend: http://localhost:3000
    - Backend API: http://localhost:8081/api
-   - Database: localhost:5432
+   - Database: localhost:5433
 
 ### Option 2: Manual Setup
 
@@ -129,7 +129,7 @@ The system uses PostgreSQL with the following main tables:
 ## 🔧 Configuration
 
 ### Backend Configuration
-- Database: PostgreSQL on localhost:5432
+- Database: PostgreSQL on localhost:5433
 - Database name: `student_management`
 - Username: `admin`
 - Password: `admin123`
@@ -161,7 +161,7 @@ The system uses PostgreSQL with the following main tables:
 
 4. **Docker Issues**
    - Ensure Docker Desktop is running
-   - Check if ports 3000, 8081, 5432 are available
+   - Check if ports 3000, 8081, 5433 are available
    - Restart Docker containers: `docker-compose down && docker-compose up -d`
 
 ## 📝 Development Notes

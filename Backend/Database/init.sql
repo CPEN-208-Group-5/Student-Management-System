@@ -76,6 +76,19 @@ CREATE TABLE department.lecturer_tas (
     ta_id INT REFERENCES department.tas(ta_id) ON DELETE CASCADE
 );
 
+-- 10. Users table for authentication (commented out for now)
+/*
+CREATE TABLE department.users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(20) NOT NULL,
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
+    enabled BOOLEAN DEFAULT true
+);
+*/
+
 -- Sample Data
 -- Students
 INSERT INTO department.students (first_name, last_name, email, phone, level, program) VALUES

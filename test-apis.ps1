@@ -5,7 +5,7 @@ Write-Host "Testing Backend APIs..." -ForegroundColor Green
 Start-Sleep -Seconds 10
 
 # Test endpoints
-$baseUrl = "http://localhost:8080/api"
+$baseUrl = "http://localhost:8081/api"
 
 # Test Students API
 Write-Host "`nTesting Students API..." -ForegroundColor Yellow

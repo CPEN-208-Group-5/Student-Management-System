@@ -1,12 +1,57 @@
 // src/components/Profile.tsx
+'use client'
+import { useEffect, useState } from 'react';
+import { Student, studentAPI } from '../lib/api';
+
 export default function Profile() {
-  const profile = {
-    first_name: "George",
-    last_name: "Gyamfi",
-    email: "george@ug.edu.gh",
-    program: "Computer Engineering",
-    year_of_study: 2,
-  };
+  const [profile, setProfile] = useState<Student | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        // For demo purposes, get the first student
+        const students = await studentAPI.getAll();
+        if (students.length > 0) {
+          setProfile(students[0]);
+        } else {
+          setError('No students found');
+        }
+      } catch (err) {
+        setError('Failed to load profile');
+        console.error('Error fetching profile:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+          <div className="space-y-4">
+            <div className="h-4 bg-gray-200 rounded"></div>
+            <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !profile) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <div className="text-center text-red-600">
+          <p>{error || 'Profile not found'}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
@@ -18,7 +63,7 @@ export default function Profile() {
         </div>
         <div className="ml-4">
           <h2 className="text-2xl font-bold text-gray-900">
-            Welcome back, <span className="text-indigo-600">{profile.first_name}!</span>
+            Welcome back, <span className="text-indigo-600">{profile.firstName}!</span>
           </h2>
           <p className="text-gray-600">Here's your student profile information</p>
         </div>
@@ -34,7 +79,7 @@ export default function Profile() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Full Name</p>
-              <p className="text-lg font-semibold text-gray-900">{profile.first_name} {profile.last_name}</p>
+              <p className="text-lg font-semibold text-gray-900">{profile.firstName} {profile.lastName}</p>
             </div>
           </div>
 
@@ -60,7 +105,7 @@ export default function Profile() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Program</p>
-              <p className="text-lg font-semibold text-gray-900">{profile.program}</p>
+              <p className="text-lg font-semibold text-gray-900">{profile.program || 'Not specified'}</p>
             </div>
           </div>
 
@@ -71,8 +116,8 @@ export default function Profile() {
               </svg>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Year of Study</p>
-              <p className="text-lg font-semibold text-gray-900">Year {profile.year_of_study}</p>
+              <p className="text-sm font-medium text-gray-500">Level</p>
+              <p className="text-lg font-semibold text-gray-900">Level {profile.level || 'Not specified'}</p>
             </div>
           </div>
         </div>

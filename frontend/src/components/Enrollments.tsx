@@ -1,11 +1,52 @@
 // src/components/Enrollments.tsx
+'use client'
+import { useEffect, useState } from 'react';
+import { Course, courseAPI } from '../lib/api';
+
 export default function Enrollments() {
-  const courses = [
-    { course_code: "CPEN201", course_name: "Data Structures", credits: 3 },
-    { course_code: "MATH251", course_name: "Differential Equations", credits: 4 },
-    { course_code: "CPEN301", course_name: "Linear Circuits", credits: 3 },
-    { course_code: "CPEN401", course_name: "Academic Writing", credits: 4 },
-  ];
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const coursesData = await courseAPI.getAll();
+        setCourses(coursesData);
+      } catch (err) {
+        setError('Failed to load courses');
+        console.error('Error fetching courses:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+          <div className="space-y-4">
+            <div className="h-4 bg-gray-200 rounded"></div>
+            <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <div className="text-center text-red-600">
+          <p>{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
@@ -31,13 +72,13 @@ export default function Enrollments() {
                 </svg>
               </div>
               <div className="ml-4">
-                <p className="font-semibold text-gray-900">{course.course_code}</p>
-                <p className="text-sm text-gray-600">{course.course_name}</p>
+                <p className="font-semibold text-gray-900">{course.courseCode}</p>
+                <p className="text-sm text-gray-600">{course.courseName}</p>
               </div>
             </div>
             <div className="flex items-center">
               <span className="bg-blue-100 text-blue-800 text-xs font-medium px-3 py-1 rounded-full">
-                {course.credits} credits
+                {course.creditHours} credits
               </span>
             </div>
           </div>
@@ -47,7 +88,7 @@ export default function Enrollments() {
       <div className="mt-6 pt-6 border-t border-gray-200">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-gray-600">Total Credits</span>
-          <span className="text-lg font-bold text-gray-900">{courses.reduce((sum, course) => sum + course.credits, 0)}</span>
+          <span className="text-lg font-bold text-gray-900">{courses.reduce((sum, course) => sum + course.creditHours, 0)}</span>
         </div>
       </div>
     </div>

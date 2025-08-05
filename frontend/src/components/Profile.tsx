@@ -65,7 +65,7 @@ export default function Profile() {
           <h2 className="text-2xl font-bold text-gray-900">
             Welcome back, <span className="text-indigo-600">{profile.firstName}!</span>
           </h2>
-          <p className="text-gray-600">Here's your student profile information</p>
+          <p className="text-gray-600">Here&apos;s your student profile information</p>
         </div>
       </div>
 

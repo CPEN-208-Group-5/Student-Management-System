@@ -14,7 +14,7 @@ export default function DashboardPage() {
               <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                 Student Dashboard
               </h1>
-              <p className="text-gray-600 mt-2">Welcome back! Here's your academic overview</p>
+              <p className="text-gray-600 mt-2">Welcome back! Here&apos;s your academic overview</p>
             </div>
             <div className="hidden md:flex items-center space-x-4">
               <div className="bg-indigo-100 p-3 rounded-full">

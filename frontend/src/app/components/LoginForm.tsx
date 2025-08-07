@@ -3,10 +3,12 @@ import Form from './Form';
 import Input from './Input';
 import Button from './Button';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function LoginForm(){
     const router = useRouter();
+    const { login } = useAuth();
     const [form, setForm] = useState({ email: '', password: '' });
     const [isLoading, setIsLoading] = useState(false);
     
@@ -28,6 +30,9 @@ export default function LoginForm(){
             });
 
             if (res.ok) {
+                const data = await res.json();
+                // Store the user data in the auth context
+                login(data.user);
                 router.push('/dashboard');
                 router.refresh();
             } else {

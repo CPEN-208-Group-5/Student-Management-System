@@ -1,4 +1,7 @@
-import React from 'react';
+'use client';
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { FeePayment, paymentAPI } from '../lib/api';
 
 type StatusType = 'PAID' | 'PARTIAL' | 'UNPAID';
 
@@ -10,12 +13,43 @@ interface Fee {
 }
 
 export default function Fees() {
-  const fees: Fee[] = [
-    { semester: "2024/2025 - Semester 1", amount_due: 1500, amount_paid: 1000, status: "PARTIAL" },
-    { semester: "2023/2024 - Semester 2", amount_due: 1500, amount_paid: 1500, status: "PAID" },
-    { semester: "2023/2024 - Semester 1", amount_due: 1500, amount_paid: 0, status: "UNPAID" },
-    { semester: "2022/2023 - Semester 2", amount_due: 1500, amount_paid: 1500, status: "PAID" },
-  ];
+  const { user } = useAuth();
+  const [fees, setFees] = useState<Fee[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchFees = async () => {
+      if (!user || user.role !== 'STUDENT') {
+        setError('User not found or not a student');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        // Get payments for the specific student
+        const payments = await paymentAPI.getByStudent(user.id);
+        
+        // For now, we'll create mock fee data based on payments
+        // In a real application, you'd have a proper fee structure API
+        const mockFees: Fee[] = [
+          { semester: "2024/2025 - Semester 1", amount_due: 1500, amount_paid: payments.reduce((sum, p) => sum + p.amountPaid, 0), status: "PARTIAL" },
+          { semester: "2023/2024 - Semester 2", amount_due: 1500, amount_paid: 1500, status: "PAID" },
+          { semester: "2023/2024 - Semester 1", amount_due: 1500, amount_paid: 0, status: "UNPAID" },
+          { semester: "2022/2023 - Semester 2", amount_due: 1500, amount_paid: 1500, status: "PAID" },
+        ];
+        
+        setFees(mockFees);
+      } catch (err) {
+        setError('Failed to load fee data');
+        console.error('Error fetching fees:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFees();
+  }, [user]);
 
   const statusStyles: Record<StatusType, string> = {
     PAID: "bg-green-100 text-green-800 border-green-200",
@@ -40,6 +74,30 @@ export default function Fees() {
       </svg>
     ),
   };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+          <div className="space-y-4">
+            <div className="h-4 bg-gray-200 rounded"></div>
+            <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <div className="text-center text-red-600">
+          <p>{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">

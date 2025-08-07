@@ -2,21 +2,29 @@
 'use client'
 import { useEffect, useState } from 'react';
 import { Student, studentAPI } from '../lib/api';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Profile() {
+  const { user } = useAuth();
   const [profile, setProfile] = useState<Student | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
+      if (!user || user.role !== 'STUDENT') {
+        setError('User not found or not a student');
+        setLoading(false);
+        return;
+      }
+
       try {
-        // For demo purposes, get the first student
-        const students = await studentAPI.getAll();
-        if (students.length > 0) {
-          setProfile(students[0]);
+        // Get the specific student by email
+        const student = await studentAPI.getByEmail(user.email);
+        if (student) {
+          setProfile(student);
         } else {
-          setError('No students found');
+          setError('Student profile not found');
         }
       } catch (err) {
         setError('Failed to load profile');
@@ -27,7 +35,7 @@ export default function Profile() {
     };
 
     fetchProfile();
-  }, []);
+  }, [user]);
 
   if (loading) {
     return (

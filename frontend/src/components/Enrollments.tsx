@@ -1,28 +1,37 @@
 // src/components/Enrollments.tsx
 'use client'
 import { useEffect, useState } from 'react';
-import { Course, courseAPI } from '../lib/api';
+import { CourseEnrollment, enrollmentAPI } from '../lib/api';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Enrollments() {
-  const [courses, setCourses] = useState<Course[]>([]);
+  const { user } = useAuth();
+  const [enrollments, setEnrollments] = useState<CourseEnrollment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchCourses = async () => {
+    const fetchEnrollments = async () => {
+      if (!user || user.role !== 'STUDENT') {
+        setError('User not found or not a student');
+        setLoading(false);
+        return;
+      }
+
       try {
-        const coursesData = await courseAPI.getAll();
-        setCourses(coursesData);
+        // Get enrollments for the specific student
+        const enrollmentsData = await enrollmentAPI.getByStudent(user.id);
+        setEnrollments(enrollmentsData);
       } catch (err) {
-        setError('Failed to load courses');
-        console.error('Error fetching courses:', err);
+        setError('Failed to load enrollments');
+        console.error('Error fetching enrollments:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCourses();
-  }, []);
+    fetchEnrollments();
+  }, [user]);
 
   if (loading) {
     return (
@@ -63,32 +72,43 @@ export default function Enrollments() {
       </div>
 
       <div className="space-y-4">
-        {courses.map((course, index) => (
-          <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-            <div className="flex items-center">
-              <div className="bg-blue-100 p-2 rounded-lg">
-                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
+        {enrollments.length > 0 ? (
+          enrollments.map((enrollment, index) => (
+            <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+              <div className="flex items-center">
+                <div className="bg-blue-100 p-2 rounded-lg">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="font-semibold text-gray-900">{enrollment.course.courseCode}</p>
+                  <p className="text-sm text-gray-600">{enrollment.course.courseName}</p>
+                  {enrollment.semester && enrollment.academicYear && (
+                    <p className="text-xs text-gray-500">{enrollment.semester} Semester, {enrollment.academicYear}</p>
+                  )}
+                </div>
               </div>
-              <div className="ml-4">
-                <p className="font-semibold text-gray-900">{course.courseCode}</p>
-                <p className="text-sm text-gray-600">{course.courseName}</p>
+              <div className="flex items-center">
+                <span className="bg-blue-100 text-blue-800 text-xs font-medium px-3 py-1 rounded-full">
+                  {enrollment.course.creditHours} credits
+                </span>
               </div>
             </div>
-            <div className="flex items-center">
-              <span className="bg-blue-100 text-blue-800 text-xs font-medium px-3 py-1 rounded-full">
-                {course.creditHours} credits
-              </span>
-            </div>
+          ))
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            <p>No courses enrolled yet.</p>
           </div>
-        ))}
+        )}
       </div>
 
       <div className="mt-6 pt-6 border-t border-gray-200">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-gray-600">Total Credits</span>
-          <span className="text-lg font-bold text-gray-900">{courses.reduce((sum, course) => sum + course.creditHours, 0)}</span>
+          <span className="text-lg font-bold text-gray-900">
+            {enrollments.reduce((sum, enrollment) => sum + enrollment.course.creditHours, 0)}
+          </span>
         </div>
       </div>
     </div>

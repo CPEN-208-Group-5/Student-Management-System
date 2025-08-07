@@ -2,12 +2,13 @@ package com.finalproject.backend.controller;
 
 import com.finalproject.backend.entity.Student;
 import com.finalproject.backend.entity.Lecturer;
+import com.finalproject.backend.entity.User;
 import com.finalproject.backend.service.StudentService;
 import com.finalproject.backend.service.LecturerService;
+import com.finalproject.backend.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -18,14 +19,12 @@ public class AuthController {
     
     private final StudentService studentService;
     private final LecturerService lecturerService;
-    
-    // Simple in-memory storage for testing (replace with database later)
-    private final Map<String, String> userPasswords = new HashMap<>();
-    private final Map<String, String> userRoles = new HashMap<>();
+    private final UserService userService;
 
-    public AuthController(StudentService studentService, LecturerService lecturerService) {
+    public AuthController(StudentService studentService, LecturerService lecturerService, UserService userService) {
         this.studentService = studentService;
         this.lecturerService = lecturerService;
+        this.userService = userService;
     }
 
     @PostMapping("/register/student")
@@ -39,7 +38,7 @@ public class AuthController {
             Integer level = Integer.valueOf((String) request.get("year_of_study"));
 
             // Check if user already exists
-            if (userPasswords.containsKey(email)) {
+            if (userService.existsByEmail(email)) {
                 return ResponseEntity.badRequest().body(Map.of("error", "User already exists"));
             }
 
@@ -52,12 +51,20 @@ public class AuthController {
                     .level(level)
                     .build();
 
-            // Save to database
+            // Save student to database
             Student savedStudent = studentService.saveStudent(student);
             
-            // Store password for login (in production, this should be hashed)
-            userPasswords.put(email, password);
-            userRoles.put(email, "STUDENT");
+            // Create and save user credentials
+            User user = User.builder()
+                    .email(email)
+                    .password(password) // In production, this should be hashed
+                    .role("STUDENT")
+                    .firstName(firstName)
+                    .lastName(lastName)
+                    .enabled(true)
+                    .build();
+            
+            userService.saveUser(user);
 
             return ResponseEntity.ok(Map.of(
                     "message", "Student registered successfully",
@@ -83,26 +90,40 @@ public class AuthController {
             String lastName = (String) request.get("last_name");
             String department = (String) request.get("department");
             String position = (String) request.get("position");
+            String employeeId = (String) request.get("employee_id"); // Handle employee_id field
 
             // Check if user already exists
-            if (userPasswords.containsKey(email)) {
+            if (userService.existsByEmail(email)) {
                 return ResponseEntity.badRequest().body(Map.of("error", "User already exists"));
             }
 
-            // Create lecturer entity
+            // Create lecturer entity with employee_id included in office field
+            String officeInfo = department + " - " + position;
+            if (employeeId != null && !employeeId.trim().isEmpty()) {
+                officeInfo += " (ID: " + employeeId + ")";
+            }
+            
             Lecturer lecturer = Lecturer.builder()
                     .firstName(firstName)
                     .lastName(lastName)
                     .email(email)
-                    .office(department + " - " + position)
+                    .office(officeInfo)
                     .build();
 
-            // Save to database
+            // Save lecturer to database
             Lecturer savedLecturer = lecturerService.saveLecturer(lecturer);
             
-            // Store password for login (in production, this should be hashed)
-            userPasswords.put(email, password);
-            userRoles.put(email, "LECTURER");
+            // Create and save user credentials
+            User user = User.builder()
+                    .email(email)
+                    .password(password) // In production, this should be hashed
+                    .role("LECTURER")
+                    .firstName(firstName)
+                    .lastName(lastName)
+                    .enabled(true)
+                    .build();
+            
+            userService.saveUser(user);
 
             return ResponseEntity.ok(Map.of(
                     "message", "Staff registered successfully",
@@ -126,11 +147,13 @@ public class AuthController {
             String password = (String) request.get("password");
 
             // Check if user exists and password matches
-            if (!userPasswords.containsKey(email) || !userPasswords.get(email).equals(password)) {
+            Optional<User> userOpt = userService.findByEmail(email);
+            if (userOpt.isEmpty() || !userOpt.get().getPassword().equals(password)) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Invalid email or password"));
             }
 
-            String role = userRoles.get(email);
+            User user = userOpt.get();
+            String role = user.getRole();
             
             // Get user details from database
             if ("STUDENT".equals(role)) {

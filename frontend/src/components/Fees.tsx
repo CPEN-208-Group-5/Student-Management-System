@@ -1,12 +1,21 @@
+import React from 'react';
+
+type StatusType = 'PAID' | 'PARTIAL' | 'UNPAID';
+
+interface Fee {
+  semester: string;
+  amount_due: number;
+  amount_paid: number;
+  status: StatusType;
+}
+
 export default function Fees() {
-  const fees = [
+  const fees: Fee[] = [
     { semester: "2024/2025 - Semester 1", amount_due: 1500, amount_paid: 1000, status: "PARTIAL" },
     { semester: "2023/2024 - Semester 2", amount_due: 1500, amount_paid: 1500, status: "PAID" },
     { semester: "2023/2024 - Semester 1", amount_due: 1500, amount_paid: 0, status: "UNPAID" },
     { semester: "2022/2023 - Semester 2", amount_due: 1500, amount_paid: 1500, status: "PAID" },
   ];
-
-  type StatusType = 'PAID' | 'PARTIAL' | 'UNPAID';
 
   const statusStyles: Record<StatusType, string> = {
     PAID: "bg-green-100 text-green-800 border-green-200",
@@ -14,7 +23,7 @@ export default function Fees() {
     UNPAID: "bg-red-100 text-red-800 border-red-200",
   };
 
-  const statusIcons: Record<StatusType, JSX.Element> = {
+  const statusIcons: Record<StatusType, React.ReactElement> = {
     PAID: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />

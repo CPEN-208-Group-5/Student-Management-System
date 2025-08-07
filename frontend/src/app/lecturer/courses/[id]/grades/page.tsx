@@ -2,13 +2,13 @@
 import PageHeader from '../../../../components/PageHeader'
 
 interface GradesPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
-export default function SubmitGradesPage({ params }: GradesPageProps) {
-  const courseId = params.id
+export default async function SubmitGradesPage({ params }: GradesPageProps) {
+  const { id: courseId } = await params
 
   return (
     <div className="space-y-6">

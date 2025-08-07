@@ -2,13 +2,13 @@
 import PageHeader from '../../../../components/PageHeader'
 
 interface StudentsPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
-export default function StudentsPage({ params }: StudentsPageProps) {
-  const courseId = params.id
+export default async function StudentsPage({ params }: StudentsPageProps) {
+  const { id: courseId } = await params
 
   return (
     <div className="space-y-6">

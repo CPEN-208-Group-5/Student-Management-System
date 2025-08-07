@@ -3,13 +3,13 @@ import PageHeader from '../../../components/PageHeader'
 import Link from 'next/link'
 
 interface CourseDetailPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
-export default function CourseDetailPage({ params }: CourseDetailPageProps) {
-  const courseId = params.id
+export default async function CourseDetailPage({ params }: CourseDetailPageProps) {
+  const { id: courseId } = await params
 
   return (
     <div className="space-y-6">

@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { FeePayment, paymentAPI } from '../lib/api';
+import { FeePayment, paymentAPI, feeStructureAPI } from '../lib/api';
 
 type StatusType = 'PAID' | 'PARTIAL' | 'UNPAID';
 
@@ -29,17 +29,45 @@ export default function Fees() {
       try {
         // Get payments for the specific student
         const payments = await paymentAPI.getByStudent(user.id);
+        const totalPaid = payments.reduce((sum, p) => sum + p.amountPaid, 0);
         
-        // For now, we'll create mock fee data based on payments
-        // In a real application, you'd have a proper fee structure API
-        const mockFees: Fee[] = [
-          { semester: "2024/2025 - Semester 1", amount_due: 1500, amount_paid: payments.reduce((sum, p) => sum + p.amountPaid, 0), status: "PARTIAL" },
-          { semester: "2023/2024 - Semester 2", amount_due: 1500, amount_paid: 1500, status: "PAID" },
-          { semester: "2023/2024 - Semester 1", amount_due: 1500, amount_paid: 0, status: "UNPAID" },
-          { semester: "2022/2023 - Semester 2", amount_due: 1500, amount_paid: 1500, status: "PAID" },
+        // Try to get fee structure for student's level (assuming level 400 for now)
+        let amountDue = 1500; // Default fallback
+        try {
+          const feeStructure = await feeStructureAPI.getByLevel(400);
+          amountDue = feeStructure.amountDue;
+        } catch (feeErr) {
+          console.log('Fee structure not available, using default amount');
+        }
+        
+        // Create fee data based on actual payments and fee structure
+        const currentYear = new Date().getFullYear();
+        const currentSemester = new Date().getMonth() < 6 ? 'First' : 'Second';
+        
+        const liveFees: Fee[] = [
+          {
+            semester: `${currentYear}/${currentYear + 1} - ${currentSemester} Semester`,
+            amount_due: amountDue,
+            amount_paid: Math.min(totalPaid, amountDue),
+            status: totalPaid >= amountDue ? 'PAID' : totalPaid > 0 ? 'PARTIAL' : 'UNPAID'
+          }
         ];
         
-        setFees(mockFees);
+        // Add previous semesters if there are additional payments
+        if (totalPaid > amountDue) {
+          const remainingAmount = totalPaid - amountDue;
+          const previousSemester = currentSemester === 'First' ? 'Second' : 'First';
+          const previousYear = currentSemester === 'First' ? currentYear - 1 : currentYear;
+          
+          liveFees.unshift({
+            semester: `${previousYear}/${previousYear + 1} - ${previousSemester} Semester`,
+            amount_due: amountDue,
+            amount_paid: Math.min(remainingAmount, amountDue),
+            status: remainingAmount >= amountDue ? 'PAID' : 'PARTIAL'
+          });
+        }
+        
+        setFees(liveFees);
       } catch (err) {
         setError('Failed to load fee data');
         console.error('Error fetching fees:', err);
@@ -114,45 +142,51 @@ export default function Fees() {
       </div>
 
       <div className="space-y-4">
-        {fees.map((fee, index) => (
-          <div key={index} className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-gray-900">{fee.semester}</h3>
-              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${statusStyles[fee.status]}`}>
-                {statusIcons[fee.status]}
-                <span className="ml-1">{fee.status}</span>
-              </span>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-600">Amount Due</p>
-                <p className="text-lg font-semibold text-gray-900">GH₵{fee.amount_due}</p>
+        {fees.length > 0 ? (
+          fees.map((fee, index) => (
+            <div key={index} className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-gray-900">{fee.semester}</h3>
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${statusStyles[fee.status]}`}>
+                  {statusIcons[fee.status]}
+                  <span className="ml-1">{fee.status}</span>
+                </span>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Amount Paid</p>
-                <p className="text-lg font-semibold text-gray-900">GH₵{fee.amount_paid}</p>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-600">Amount Due</p>
+                  <p className="text-lg font-semibold text-gray-900">GH₵{fee.amount_due}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Amount Paid</p>
+                  <p className="text-lg font-semibold text-gray-900">GH₵{fee.amount_paid}</p>
+                </div>
               </div>
-            </div>
 
-            {fee.status === "PARTIAL" && (
-              <div className="mt-3">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Payment Progress</span>
-                  <span className="font-medium text-gray-900">
-                    {Math.round((fee.amount_paid / fee.amount_due) * 100)}%
-                  </span>
+              {fee.status === "PARTIAL" && (
+                <div className="mt-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Payment Progress</span>
+                    <span className="font-medium text-gray-900">
+                      {Math.round((fee.amount_paid / fee.amount_due) * 100)}%
+                    </span>
+                  </div>
+                  <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-yellow-500 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${(fee.amount_paid / fee.amount_due) * 100}%` }}
+                    ></div>
+                  </div>
                 </div>
-                <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-yellow-500 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${(fee.amount_paid / fee.amount_due) * 100}%` }}
-                  ></div>
-                </div>
-              </div>
-            )}
+              )}
+            </div>
+          ))
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            <p>No fee information available.</p>
           </div>
-        ))}
+        )}
       </div>
 
       <div className="mt-6 pt-6 border-t border-gray-200">

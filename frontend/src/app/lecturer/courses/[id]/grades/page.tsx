@@ -1,5 +1,6 @@
 // src/app/lecturer/courses/[id]/grades/page.tsx
-import PageHeader from '../../../../components/PageHeader'
+import PageHeader from '@/app/components/PageHeader'
+import GradeEntryForm from '@/components/GradeEntryForm'
 
 interface GradesPageProps {
   params: Promise<{
@@ -17,10 +18,7 @@ export default async function SubmitGradesPage({ params }: GradesPageProps) {
         description={`Enter and submit final grades for course ${courseId}`}
       />
 
-      {/* Placeholder: Form or table to enter grades */}
-      <div className="border rounded p-4 text-gray-600">
-        Grade entry feature coming soon.
-      </div>
+      <GradeEntryForm courseId={courseId} />
     </div>
   )
 }

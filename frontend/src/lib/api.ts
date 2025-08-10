@@ -52,6 +52,17 @@ export interface FeePayment {
   paymentDate: string;
 }
 
+export interface Grade {
+  id: number;
+  student: Student;
+  course: Course;
+  semester?: string;
+  academicYear?: string;
+  gradeValue?: number;
+  letterGrade?: string;
+  gradeDate?: string;
+}
+
 // Generic API functions
 async function apiRequest<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
@@ -146,6 +157,7 @@ export const enrollmentAPI = {
   getAll: () => apiRequest<CourseEnrollment[]>('/enrollments'),
   getById: (id: number) => apiRequest<CourseEnrollment>(`/enrollments/${id}`),
   getByStudent: (studentId: number) => apiRequest<CourseEnrollment[]>(`/enrollments/student/${studentId}`),
+  getByCourse: (courseId: number) => apiRequest<CourseEnrollment[]>(`/enrollments/course/${courseId}`),
   create: (enrollment: Omit<CourseEnrollment, 'id'>) => apiRequest<CourseEnrollment>('/enrollments', {
     method: 'POST',
     body: JSON.stringify(enrollment),
@@ -173,6 +185,30 @@ export const paymentAPI = {
     body: JSON.stringify(payment),
   }),
   delete: (id: number) => apiRequest<void>(`/payments/${id}`, {
+    method: 'DELETE',
+  }),
+};
+
+// Grade API functions
+export const gradeAPI = {
+  getAll: () => apiRequest<Grade[]>('/grades'),
+  getById: (id: number) => apiRequest<Grade>(`/grades/${id}`),
+  getByStudent: (studentId: number) => apiRequest<Grade[]>(`/grades/student/${studentId}`),
+  getByStudentAndSemester: (studentId: number, semester: string, academicYear: string) => 
+    apiRequest<Grade[]>(`/grades/student/${studentId}/semester?semester=${semester}&academicYear=${academicYear}`),
+  getByCourse: (courseId: number) => apiRequest<Grade[]>(`/grades/course/${courseId}`),
+  getStudentGPA: (studentId: number) => apiRequest<number>(`/grades/student/${studentId}/gpa`),
+  getStudentGPABySemester: (studentId: number, semester: string, academicYear: string) => 
+    apiRequest<number>(`/grades/student/${studentId}/gpa/semester?semester=${semester}&academicYear=${academicYear}`),
+  create: (grade: Omit<Grade, 'id'>) => apiRequest<Grade>('/grades', {
+    method: 'POST',
+    body: JSON.stringify(grade),
+  }),
+  update: (id: number, grade: Partial<Grade>) => apiRequest<Grade>(`/grades/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(grade),
+  }),
+  delete: (id: number) => apiRequest<void>(`/grades/${id}`, {
     method: 'DELETE',
   }),
 }; 

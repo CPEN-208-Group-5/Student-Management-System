@@ -1,5 +1,5 @@
 // src/app/lecturer/courses/[id]/students/page.tsx
-import PageHeader from '../../../../components/PageHeader'
+import PageHeader from '@/app/components/PageHeader'
 
 interface StudentsPageProps {
   params: Promise<{

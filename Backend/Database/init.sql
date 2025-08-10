@@ -87,6 +87,18 @@ CREATE TABLE department.users (
     enabled BOOLEAN DEFAULT true
 );
 
+-- 11. Grades table for student performance tracking
+CREATE TABLE department.grades (
+    grade_id SERIAL PRIMARY KEY,
+    student_id INT REFERENCES department.students(student_id) ON DELETE CASCADE,
+    course_id INT REFERENCES department.courses(course_id) ON DELETE CASCADE,
+    semester VARCHAR(20),
+    academic_year VARCHAR(20),
+    grade_value DECIMAL(3,1) CHECK (grade_value >= 0.0 AND grade_value <= 4.0),
+    letter_grade VARCHAR(2),
+    grade_date DATE DEFAULT CURRENT_DATE
+);
+
 -- Sample Data
 -- Students
 INSERT INTO department.students (first_name, last_name, email, phone, level, program) VALUES
@@ -122,6 +134,11 @@ INSERT INTO department.fee_payments (student_id, amount_paid, payment_date) VALU
 (1, 2000.00, '2025-01-10'),
 (1, 300.00, '2025-03-15'),
 (2, 2500.00, '2025-01-12');
+
+-- Sample Grades (for demonstration)
+INSERT INTO department.grades (student_id, course_id, semester, academic_year, grade_value, letter_grade) VALUES
+(1, 1, 'First', '2024/2025', 3.7, 'A-'),
+(2, 2, 'First', '2024/2025', 3.9, 'A');
 
 -- Lecturer-Course Assignments
 INSERT INTO department.lecturer_courses (lecturer_id, course_id) VALUES
@@ -160,5 +177,33 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql; 
 
+-- Function to calculate student GPA
+CREATE OR REPLACE FUNCTION department.calculate_student_gpa(student_id_param INT)
+RETURNS DECIMAL(3,2) AS $$
+DECLARE
+    total_grade_points DECIMAL(10,2) := 0;
+    total_credits INT := 0;
+    course_credits INT;
+    grade_value DECIMAL(3,1);
+BEGIN
+    FOR course_credits, grade_value IN 
+        SELECT c.credit_hours, g.grade_value
+        FROM department.grades g
+        JOIN department.courses c ON g.course_id = c.course_id
+        WHERE g.student_id = student_id_param AND g.grade_value IS NOT NULL
+    LOOP
+        total_grade_points := total_grade_points + (course_credits * grade_value);
+        total_credits := total_credits + course_credits;
+    END LOOP;
+    
+    IF total_credits = 0 THEN
+        RETURN 0.00;
+    ELSE
+        RETURN ROUND((total_grade_points / total_credits)::DECIMAL, 2);
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
 -- Example usage:
 SELECT department.get_outstanding_fees();
+SELECT department.calculate_student_gpa(1);
